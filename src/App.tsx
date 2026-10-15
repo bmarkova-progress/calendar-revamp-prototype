@@ -31,12 +31,14 @@ function Calendar({
   showWeekNumbers = true,
   responsive = false,
   drilldown = false,
+  fluidTodayPlacement = false,
   onTodayPlacementChange,
 }: {
   centered?: boolean;
   showWeekNumbers?: boolean;
   responsive?: boolean;
   drilldown?: boolean;
+  fluidTodayPlacement?: boolean;
   onTodayPlacementChange?: (todayInHeader: boolean) => void;
 }) {
   const [view, setView] = useState(() => new Date(2021, 8, 1));
@@ -46,7 +48,7 @@ function Calendar({
   const [showTodayInHeader, setShowTodayInHeader] = useState(false);
   const calendarRef = useRef<HTMLElement>(null);
   const selectedYearRef = useRef<HTMLButtonElement>(null);
-  const todayInHeader = showTodayInHeader && !centered;
+  const todayInHeader = fluidTodayPlacement && showTodayInHeader && !centered;
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -341,16 +343,26 @@ function Calendar({
 
 export default function App() {
   const [showWeekNumbers, setShowWeekNumbers] = useState(true);
+  const [fluidTodayPlacement, setFluidTodayPlacement] = useState(false);
   const [responsiveWidth, setResponsiveWidth] = useState(298);
   const [responsiveHeight, setResponsiveHeight] = useState(MIN_RESPONSIVE_HEIGHT);
   const [todayInHeader, setTodayInHeader] = useState(false);
   const responsiveFrameRef = useRef<HTMLDivElement>(null);
+  const previousTodayInHeader = useRef<boolean | null>(null);
 
   useEffect(() => {
-    if (!todayInHeader && responsiveHeight < MIN_FOOTER_HEIGHT) {
-      setResponsiveHeight(MIN_FOOTER_HEIGHT);
-    }
-  }, [responsiveHeight, todayInHeader]);
+    const previous = previousTodayInHeader.current;
+    previousTodayInHeader.current = todayInHeader;
+
+    if (previous === todayInHeader) return;
+
+    const footerHeight = MIN_FOOTER_HEIGHT - MIN_RESPONSIVE_HEIGHT;
+    setResponsiveHeight((height) =>
+      todayInHeader
+        ? Math.max(MIN_RESPONSIVE_HEIGHT, height - footerHeight)
+        : Math.min(720, Math.max(MIN_FOOTER_HEIGHT, height + footerHeight)),
+    );
+  }, [todayInHeader]);
 
   function startResize(direction: -1 | 1) {
     return (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -449,6 +461,20 @@ export default function App() {
             <span className="sr-only">Toggle week number columns</span>
           </label>
         </div>
+        <div className="demo-controls">
+          <span>Fluid Today placement</span>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={fluidTodayPlacement}
+              onChange={(event) => setFluidTodayPlacement(event.target.checked)}
+            />
+            <span className="switch-track" aria-hidden="true">
+              <span className="switch-thumb" />
+            </span>
+            <span className="sr-only">Toggle fluid Today button placement</span>
+          </label>
+        </div>
       </div>
       <div className="responsive-demo">
         <div
@@ -492,6 +518,7 @@ export default function App() {
             drilldown
             responsive
             showWeekNumbers={showWeekNumbers}
+            fluidTodayPlacement={fluidTodayPlacement}
             onTodayPlacementChange={setTodayInHeader}
           />
           <button
