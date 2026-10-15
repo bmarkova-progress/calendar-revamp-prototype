@@ -1,0 +1,665 @@
+@font-face {
+  font-family: "Inter:Regular";
+  src: url("https://static.figma.com/font/Inter_1") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: #232a36;
+  background: white;
+  font-family: "Inter:Regular", Inter, sans-serif;
+}
+
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
+  padding: 40px 20px;
+  background: #f8fafc;
+}
+
+.demo-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.demo-intro {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-inline: 34px;
+}
+
+.demo-instructions {
+  width: min(700px, 100%);
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.demo-title {
+  margin: 0;
+  color: #334155;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.responsive-demo {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  padding-block: 34px;
+}
+
+.responsive-frame {
+  position: relative;
+  max-width: calc(100vw - 80px);
+}
+
+.resize-handle {
+  position: absolute;
+  top: 50%;
+  z-index: 20;
+  display: grid;
+  width: 24px;
+  height: 48px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 6px rgb(56 66 80 / 12%);
+  cursor: ew-resize;
+  touch-action: none;
+  transform: translateY(-50%);
+}
+
+.resize-handle--left {
+  left: -34px;
+}
+
+.resize-handle--right {
+  right: -34px;
+}
+
+.resize-handle--top,
+.resize-handle--bottom {
+  left: 50%;
+  width: 48px;
+  height: 24px;
+  cursor: ns-resize;
+  transform: translateX(-50%);
+}
+
+.resize-handle--top {
+  top: -34px;
+}
+
+.resize-handle--bottom {
+  top: auto;
+  bottom: -34px;
+}
+
+.resize-handle--top-left,
+.resize-handle--top-right,
+.resize-handle--bottom-left,
+.resize-handle--bottom-right {
+  width: 24px;
+  height: 24px;
+  transform: none;
+}
+
+.resize-handle--top-left {
+  top: -34px;
+  left: -34px;
+  cursor: nwse-resize;
+}
+
+.resize-handle--top-right {
+  top: -34px;
+  right: -34px;
+  cursor: nesw-resize;
+}
+
+.resize-handle--bottom-left {
+  top: auto;
+  bottom: -34px;
+  left: -34px;
+  cursor: nesw-resize;
+}
+
+.resize-handle--bottom-right {
+  top: auto;
+  right: -34px;
+  bottom: -34px;
+  cursor: nwse-resize;
+}
+
+.resize-handle span {
+  width: 4px;
+  height: 20px;
+  border-right: 1px solid #94a3b8;
+  border-left: 1px solid #94a3b8;
+}
+
+.resize-handle--top span,
+.resize-handle--bottom span {
+  width: 20px;
+  height: 4px;
+  border: 0;
+  border-top: 1px solid #94a3b8;
+  border-bottom: 1px solid #94a3b8;
+}
+
+.resize-handle--top-left span,
+.resize-handle--top-right span,
+.resize-handle--bottom-left span,
+.resize-handle--bottom-right span {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #94a3b8;
+}
+
+.resize-handle--top-left span {
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.resize-handle--top-right span {
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.resize-handle--bottom-left span {
+  border-top: 0;
+  border-right: 0;
+}
+
+.resize-handle--bottom-right span {
+  border-top: 0;
+  border-left: 0;
+}
+
+.resize-handle:hover {
+  border-color: #5558e8;
+  background: #f5f5ff;
+}
+
+.resize-handle:focus-visible {
+  outline: 2px solid #0f0051;
+  outline-offset: 2px;
+}
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switch-track {
+  display: flex;
+  width: 36px;
+  height: 20px;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 150ms ease;
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 25%);
+  transition: transform 150ms ease;
+}
+
+.switch input:checked + .switch-track {
+  background: #5558e8;
+}
+
+.switch input:checked + .switch-track .switch-thumb {
+  transform: translateX(16px);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 2px solid #0f0051;
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+}
+
+.calendar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* The design has a 296px content area; the extra 2px preserves it inside the border. */
+  width: min(298px, calc(100vw - 40px));
+  overflow: hidden;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 4px 14px rgb(56 66 80 / 7%);
+}
+
+.calendar--without-weeks {
+  width: min(274px, calc(100vw - 40px));
+}
+
+.calendar--responsive {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-header {
+  display: flex;
+  height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+}
+
+.date-nav .label-button:first-child {
+  position: relative;
+  z-index: 1;
+  margin-right: -6px;
+}
+
+.calendar--centered .calendar-header {
+  display: grid;
+  grid-template-columns: 38px 1fr 38px;
+}
+
+.calendar--centered .date-nav {
+  justify-content: center;
+}
+
+.label-button,
+.today-button {
+  min-height: 38px;
+  padding: 7px 1px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #0f0051;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+.label-button {
+  color: #5558e8;
+  padding-inline: 6px;
+}
+
+.label-button:hover,
+.today-button:hover,
+.arrows > button:not(.today-button):hover {
+  background: #f5f5ff;
+}
+
+.label-button:focus-visible,
+.today-button:focus-visible,
+.arrows > button:not(.today-button):focus-visible,
+.menu button:focus-visible {
+  outline: 2px solid #0f0051;
+  outline-offset: 1px;
+}
+
+.arrows {
+  display: flex;
+}
+
+.arrows > button:not(.today-button) {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.arrows svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #232a36;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.calendar-grid {
+  display: grid;
+  /* 24px week numbers + seven 36px days leaves the designed 10px inset on both sides. */
+  grid-template-columns: 24px repeat(7, 36px);
+  padding: 0 10px;
+}
+
+.grid-without-weeks {
+  grid-template-columns: repeat(7, 36px);
+}
+
+.responsive-grid {
+  flex: 1;
+  grid-template-columns: 24px repeat(7, minmax(36px, 1fr));
+  grid-template-rows: repeat(7, 36px);
+  align-content: space-between;
+  padding-bottom: 10px;
+}
+
+.responsive-grid.grid-without-weeks {
+  grid-template-columns: repeat(7, minmax(36px, 1fr));
+}
+
+.responsive-grid .day {
+  width: 100%;
+}
+
+.calendar-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  height: 254px;
+  padding: 0 10px;
+  overflow-y: auto;
+  justify-content: space-between;
+  scrollbar-color: #b4bdc9 transparent;
+  scrollbar-width: thin;
+}
+
+.calendar--responsive .calendar-choice-grid {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.calendar--responsive .month-choice-grid {
+  grid-template-rows: repeat(4, 63.5px);
+  align-content: space-between;
+}
+
+.calendar-choice-grid button {
+  display: grid;
+  width: 72px;
+  min-height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.calendar-choice-grid button span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 32px;
+  place-items: center;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.calendar-choice-grid button:hover span {
+  background: #f1f3f5;
+}
+
+.calendar-choice-grid button:focus-visible {
+  outline: none;
+}
+
+.calendar-choice-grid button:focus-visible span {
+  box-shadow: 0 0 0 1px white, 0 0 0 2px #0f0051;
+}
+
+.calendar-choice-grid button[aria-selected="true"] span {
+  color: white;
+  background: #5558e8;
+}
+
+.month-choice-grid {
+  grid-template-rows: repeat(4, 1fr);
+}
+
+.year-choice-grid {
+  grid-auto-rows: 36px;
+  align-content: start;
+  padding-block: 1px;
+}
+
+.year-choice-view {
+  position: relative;
+  height: 254px;
+}
+
+.year-choice-view .year-choice-grid {
+  height: 100%;
+}
+
+.calendar--responsive .year-choice-view {
+  display: flex;
+  height: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.year-choice-view::before,
+.year-choice-view::after {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  left: 0;
+  height: 48px;
+  content: "";
+  pointer-events: none;
+}
+
+.year-choice-view::before {
+  top: 0;
+  background: linear-gradient(to bottom, white, transparent);
+}
+
+.year-choice-view::after {
+  bottom: 0;
+  background: linear-gradient(to top, white, transparent);
+}
+
+.contents {
+  display: contents;
+}
+
+.week-spacer,
+.weekday {
+  height: 36px;
+}
+
+.weekday {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.week-number,
+.day {
+  display: grid;
+  height: 36px;
+  place-items: center;
+}
+
+.week-number {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.day {
+  width: 36px;
+  padding: 2px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.day-inner {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 4px;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.outside-month {
+  color: rgb(100 116 139 / 50%);
+}
+
+button.day {
+  cursor: pointer;
+}
+
+button.day:hover .day-inner {
+  background: #f1f3f5;
+}
+
+.day.selected .day-inner {
+  color: white;
+  background: #5558e8;
+}
+
+.day.selected:hover .day-inner {
+  background: #484bd5;
+}
+
+.day:focus-visible {
+  outline: none;
+}
+
+.day:focus-visible .day-inner {
+  box-shadow: 0 0 0 1px white, 0 0 0 2px #0f0051;
+}
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  height: 56px;
+  padding: 10px;
+}
+
+.calendar--responsive footer {
+  padding-top: 0;
+}
+
+.centered-footer {
+  justify-content: center;
+}
+
+.today-button {
+  padding-inline: 11px;
+}
+
+.today-button--header {
+  height: 38px;
+  min-height: 38px;
+  padding-block: 6px;
+}
+
+.menu {
+  position: absolute;
+  top: 48px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  max-height: 310px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid rgb(180 189 201 / 35%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 -1px 2px rgb(56 66 80 / 3%), 0 4px 6px -2px rgb(56 66 80 / 2%),
+    0 12px 16px -4px rgb(56 66 80 / 8%);
+  backdrop-filter: blur(12px);
+  scrollbar-color: #b4bdc9 transparent;
+  scrollbar-width: thin;
+}
+
+.month-menu {
+  left: 10px;
+  width: 116px;
+}
+
+.year-menu {
+  left: 63px;
+  width: 76px;
+}
+
+.menu button {
+  height: 38px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+.menu button:hover,
+.menu button[aria-selected="true"] {
+  background: #f1f3f5;
+}
