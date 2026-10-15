@@ -18,6 +18,10 @@ const weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 const HEADER_TODAY_MIN_WIDTH = 312;
 const MIN_RESPONSIVE_HEIGHT = 322;
 const MIN_FOOTER_HEIGHT = 378;
+const MULTI_VIEW_WIDTH_WITH_WEEKS = 596;
+const MULTI_VIEW_WIDTH_WITHOUT_WEEKS = 548;
+const MULTI_VIEW_HEIGHT = 378;
+type CalendarBodyMode = "days" | "months" | "years";
 
 function isoWeek(date: Date) {
   const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -26,12 +30,105 @@ function isoWeek(date: Date) {
   return Math.ceil(((value.getTime() - start.getTime()) / 86400000 + 1) / 7);
 }
 
+function MonthGrid({
+  view,
+  selected,
+  showWeekNumbers,
+  responsive = false,
+  onChooseDate,
+}: {
+  view: Date;
+  selected: Date;
+  showWeekNumbers: boolean;
+  responsive?: boolean;
+  onChooseDate: (date: Date) => void;
+}) {
+  const year = view.getFullYear();
+  const month = view.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPreviousMonth = new Date(year, month, 0).getDate();
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const day = index - firstDay + 1;
+    if (day < 1) {
+      const outsideDay = daysInPreviousMonth + day;
+      return { day: outsideDay, date: new Date(year, month - 1, outsideDay), outsideMonth: true };
+    }
+    if (day <= daysInMonth) return { day, date: new Date(year, month, day), outsideMonth: false };
+    const outsideDay = day - daysInMonth;
+    return { day: outsideDay, date: new Date(year, month + 1, outsideDay), outsideMonth: true };
+  });
+
+  return (
+    <div
+      className={[
+        "calendar-grid",
+        !showWeekNumbers && "grid-without-weeks",
+        responsive && "responsive-grid",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {showWeekNumbers && <div className="week-spacer" />}
+      {weekdays.map((day) => (
+        <div className="weekday" key={day}>
+          {day}
+        </div>
+      ))}
+      {Array.from({ length: 6 }, (_, row) => (
+        <div className="contents" key={row}>
+          {showWeekNumbers && (
+            <div className="week-number">
+              {isoWeek(new Date(year, month, row * 7 - firstDay + 1))}
+            </div>
+          )}
+          {cells.slice(row * 7, row * 7 + 7).map((cell) => (
+            <button
+              className={[
+                "day",
+                cell.outsideMonth && "outside-month",
+                selected.getFullYear() === cell.date.getFullYear() &&
+                  selected.getMonth() === cell.date.getMonth() &&
+                  selected.getDate() === cell.date.getDate() &&
+                  "selected",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              type="button"
+              key={cell.date.getTime()}
+              onClick={() => onChooseDate(cell.date)}
+              aria-label={`${months[cell.date.getMonth()]} ${cell.day}, ${cell.date.getFullYear()}`}
+              aria-pressed={
+                selected.getFullYear() === cell.date.getFullYear() &&
+                selected.getMonth() === cell.date.getMonth() &&
+                selected.getDate() === cell.date.getDate()
+              }
+            >
+              <span className="day-inner">{cell.day}</span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Calendar({
   centered = false,
   showWeekNumbers = true,
   responsive = false,
   drilldown = false,
   fluidTodayPlacement = false,
+  currentView,
+  currentSelected,
+  showNavigation = true,
+  showFooter = true,
+  reserveFooterSpace = false,
+  currentBodyMode,
+  onViewChange,
+  onSelectedChange,
+  onBodyModeChange,
+  onToday,
   onTodayPlacementChange,
 }: {
   centered?: boolean;
@@ -39,15 +136,28 @@ function Calendar({
   responsive?: boolean;
   drilldown?: boolean;
   fluidTodayPlacement?: boolean;
+  currentView?: Date;
+  currentSelected?: Date;
+  showNavigation?: boolean;
+  showFooter?: boolean;
+  reserveFooterSpace?: boolean;
+  currentBodyMode?: CalendarBodyMode;
+  onViewChange?: (date: Date) => void;
+  onSelectedChange?: (date: Date) => void;
+  onBodyModeChange?: (bodyMode: CalendarBodyMode) => void;
+  onToday?: (date: Date) => void;
   onTodayPlacementChange?: (todayInHeader: boolean) => void;
 }) {
-  const [view, setView] = useState(() => new Date(2021, 8, 1));
-  const [selected, setSelected] = useState(() => new Date(2021, 8, 1));
+  const [uncontrolledView, setUncontrolledView] = useState(() => new Date(2021, 8, 1));
+  const [uncontrolledSelected, setUncontrolledSelected] = useState(() => new Date(2021, 8, 1));
   const [openMenu, setOpenMenu] = useState<"month" | "year" | null>(null);
-  const [bodyMode, setBodyMode] = useState<"days" | "months" | "years">("days");
+  const [uncontrolledBodyMode, setUncontrolledBodyMode] = useState<CalendarBodyMode>("days");
   const [showTodayInHeader, setShowTodayInHeader] = useState(false);
   const calendarRef = useRef<HTMLElement>(null);
   const selectedYearRef = useRef<HTMLButtonElement>(null);
+  const view = currentView ?? uncontrolledView;
+  const selected = currentSelected ?? uncontrolledSelected;
+  const bodyMode = currentBodyMode ?? uncontrolledBodyMode;
   const todayInHeader = fluidTodayPlacement && showTodayInHeader && !centered;
 
   useEffect(() => {
@@ -84,43 +194,48 @@ function Calendar({
 
   const year = view.getFullYear();
   const month = view.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPreviousMonth = new Date(year, month, 0).getDate();
-  const cells = Array.from({ length: 42 }, (_, index) => {
-    const day = index - firstDay + 1;
-    if (day < 1) {
-      const outsideDay = daysInPreviousMonth + day;
-      return { day: outsideDay, date: new Date(year, month - 1, outsideDay), outsideMonth: true };
-    }
-    if (day <= daysInMonth) return { day, date: new Date(year, month, day), outsideMonth: false };
-    const outsideDay = day - daysInMonth;
-    return { day: outsideDay, date: new Date(year, month + 1, outsideDay), outsideMonth: true };
-  });
   const years = Array.from({ length: 201 }, (_, index) => 1900 + index);
+
+  function setCalendarView(date: Date) {
+    if (currentView) onViewChange?.(date);
+    else setUncontrolledView(date);
+  }
+
+  function setCalendarSelected(date: Date) {
+    if (currentSelected) onSelectedChange?.(date);
+    else setUncontrolledSelected(date);
+  }
+
+  function setCalendarBodyMode(mode: CalendarBodyMode) {
+    if (currentBodyMode) onBodyModeChange?.(mode);
+    else setUncontrolledBodyMode(mode);
+  }
 
   function moveMonth(offset: number) {
     if (bodyMode === "years") {
-      setView(new Date(year + offset * 21, month, 1));
+      setCalendarView(new Date(year + offset * 21, month, 1));
     } else if (bodyMode === "months") {
-      setView(new Date(year + offset, month, 1));
+      setCalendarView(new Date(year + offset, month, 1));
     } else {
-      setView(new Date(year, month + offset, 1));
+      setCalendarView(new Date(year, month + offset, 1));
     }
     setOpenMenu(null);
   }
 
   function chooseDate(date: Date) {
-    setSelected(date);
-    setView(new Date(date.getFullYear(), date.getMonth(), 1));
+    setCalendarSelected(date);
+    setCalendarView(new Date(date.getFullYear(), date.getMonth(), 1));
   }
 
   function goToday() {
     const today = new Date();
-    setView(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelected(today);
+    if (onToday) onToday(today);
+    else {
+      setCalendarView(new Date(today.getFullYear(), today.getMonth(), 1));
+      setCalendarSelected(today);
+    }
     setOpenMenu(null);
-    setBodyMode("days");
+    setCalendarBodyMode("days");
   }
 
   const previousButton = (
@@ -155,13 +270,14 @@ function Calendar({
           centered && "calendar--centered",
           !showWeekNumbers && "calendar--without-weeks",
           responsive && "calendar--responsive",
+          !showFooter && "calendar--without-footer",
         ]
           .filter(Boolean)
           .join(" ")}
         aria-label={centered ? "Centered calendar" : "Calendar"}
       >
         <header className="calendar-header">
-          {centered && <nav className="arrows" aria-label="Previous month">{previousButton}</nav>}
+          {centered && showNavigation && <nav className="arrows" aria-label="Previous month">{previousButton}</nav>}
           <div className="date-nav">
             <button
               className="label-button"
@@ -170,7 +286,7 @@ function Calendar({
               aria-expanded={drilldown ? bodyMode === "months" : openMenu === "month"}
               onClick={() =>
                 drilldown
-                  ? setBodyMode(bodyMode === "months" ? "days" : "months")
+                  ? setCalendarBodyMode(bodyMode === "months" ? "days" : "months")
                   : setOpenMenu(openMenu === "month" ? null : "month")
               }
             >
@@ -183,7 +299,7 @@ function Calendar({
               aria-expanded={drilldown ? bodyMode === "years" : openMenu === "year"}
               onClick={() =>
                 drilldown
-                  ? setBodyMode(bodyMode === "years" ? "days" : "years")
+                  ? setCalendarBodyMode(bodyMode === "years" ? "days" : "years")
                   : setOpenMenu(openMenu === "year" ? null : "year")
               }
             >
@@ -191,71 +307,21 @@ function Calendar({
             </button>
           </div>
           <nav className="arrows" aria-label={centered ? "Next month" : "Month navigation"}>
-            {!centered && previousButton}
+            {!centered && showNavigation && previousButton}
             {todayInHeader && todayButton}
-            {nextButton}
+            {showNavigation && nextButton}
           </nav>
         </header>
 
-        {bodyMode === "days" && <div
-          className={[
-            "calendar-grid",
-            !showWeekNumbers && "grid-without-weeks",
-            responsive && "responsive-grid",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          {showWeekNumbers && <div className="week-spacer" />}
-          {weekdays.map((day) => (
-            <div className="weekday" key={day}>
-              {day}
-            </div>
-          ))}
-          {Array.from({ length: 6 }, (_, row) => (
-            <div className="contents" key={row}>
-              {showWeekNumbers && (
-                <div className="week-number">
-                  {isoWeek(new Date(year, month, row * 7 - firstDay + 1))}
-                </div>
-              )}
-              {cells.slice(row * 7, row * 7 + 7).map((cell) =>
-                !cell.outsideMonth ? (
-                  <button
-                    className={
-                      selected.getFullYear() === year &&
-                      selected.getMonth() === month &&
-                      selected.getDate() === cell.day
-                        ? "day selected"
-                        : "day"
-                    }
-                    type="button"
-                    key={cell.date.getTime()}
-                    onClick={() => chooseDate(cell.date)}
-                    aria-label={`${months[month]} ${cell.day}, ${year}`}
-                    aria-pressed={
-                      selected.getFullYear() === year &&
-                      selected.getMonth() === month &&
-                      selected.getDate() === cell.day
-                    }
-                  >
-                    <span className="day-inner">{cell.day}</span>
-                  </button>
-                ) : (
-                  <button
-                    className="day outside-month"
-                    type="button"
-                    key={cell.date.getTime()}
-                    onClick={() => chooseDate(cell.date)}
-                    aria-label={`${months[cell.date.getMonth()]} ${cell.day}, ${cell.date.getFullYear()}`}
-                  >
-                    <span className="day-inner">{cell.day}</span>
-                  </button>
-                ),
-              )}
-            </div>
-          ))}
-        </div>}
+        {bodyMode === "days" && (
+          <MonthGrid
+            view={view}
+            selected={selected}
+            showWeekNumbers={showWeekNumbers}
+            responsive={responsive}
+            onChooseDate={chooseDate}
+          />
+        )}
 
         {bodyMode === "months" && (
           <div className="calendar-choice-grid month-choice-grid" role="listbox" aria-label="Choose month">
@@ -266,8 +332,8 @@ function Calendar({
                 aria-selected={index === month}
                 key={name}
                 onClick={() => {
-                  setView(new Date(year, index, 1));
-                  setBodyMode("days");
+                  setCalendarView(new Date(year, index, 1));
+                  setCalendarBodyMode("days");
                 }}
               >
                 <span>{name.slice(0, 3)}</span>
@@ -287,8 +353,8 @@ function Calendar({
                   ref={item === year ? selectedYearRef : undefined}
                   key={item}
                   onClick={() => {
-                    setView(new Date(item, month, 1));
-                    setBodyMode("days");
+                    setCalendarView(new Date(item, month, 1));
+                    setCalendarBodyMode("days");
                   }}
                 >
                   <span>{item}</span>
@@ -298,7 +364,9 @@ function Calendar({
           </div>
         )}
 
-        {!todayInHeader && <footer className={centered ? "centered-footer" : undefined}>{todayButton}</footer>}
+        {(showFooter || reserveFooterSpace) && !todayInHeader && (
+          <footer className={centered ? "centered-footer" : undefined}>{showFooter && todayButton}</footer>
+        )}
 
         {!drilldown && openMenu === "month" && (
           <div className="menu month-menu" role="listbox" aria-label="Choose month">
@@ -309,7 +377,7 @@ function Calendar({
                 aria-selected={index === month}
                 key={name}
                 onClick={() => {
-                  setView(new Date(year, index, 1));
+                  setCalendarView(new Date(year, index, 1));
                   setOpenMenu(null);
                 }}
               >
@@ -328,7 +396,7 @@ function Calendar({
                 ref={item === year ? selectedYearRef : undefined}
                 key={item}
                 onClick={() => {
-                  setView(new Date(item, month, 1));
+                  setCalendarView(new Date(item, month, 1));
                   setOpenMenu(null);
                 }}
               >
@@ -341,14 +409,77 @@ function Calendar({
   );
 }
 
+function MultiViewCalendar({
+  showWeekNumbers,
+  fluidTodayPlacement,
+  onTodayPlacementChange,
+}: {
+  showWeekNumbers: boolean;
+  fluidTodayPlacement: boolean;
+  onTodayPlacementChange: (todayInHeader: boolean) => void;
+}) {
+  const [view, setView] = useState(() => new Date(2021, 8, 1));
+  const [selected, setSelected] = useState(() => new Date(2021, 9, 1));
+  const [bodyMode, setBodyMode] = useState<CalendarBodyMode>("days");
+  const [todayInHeader, setTodayInHeader] = useState(false);
+  const nextView = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+
+  function updateTodayPlacement(value: boolean) {
+    setTodayInHeader(value);
+    onTodayPlacementChange(value);
+  }
+
+  return (
+    <section className="multi-calendar" aria-label="Two-month calendar">
+      <Calendar
+        responsive
+        drilldown
+        showWeekNumbers={showWeekNumbers}
+        currentView={view}
+        currentSelected={selected}
+        currentBodyMode={bodyMode}
+        showNavigation={false}
+        showFooter={false}
+        reserveFooterSpace={!todayInHeader}
+        onViewChange={setView}
+        onSelectedChange={setSelected}
+        onBodyModeChange={setBodyMode}
+      />
+      <Calendar
+        responsive
+        drilldown
+        showWeekNumbers={showWeekNumbers}
+        currentView={nextView}
+        currentSelected={selected}
+        currentBodyMode={bodyMode}
+        fluidTodayPlacement={fluidTodayPlacement}
+        onViewChange={(date) => setView(new Date(date.getFullYear(), date.getMonth() - 1, 1))}
+        onSelectedChange={setSelected}
+        onBodyModeChange={setBodyMode}
+        onTodayPlacementChange={updateTodayPlacement}
+        onToday={(today) => {
+          setView(new Date(today.getFullYear(), today.getMonth(), 1));
+          setSelected(today);
+        }}
+      />
+    </section>
+  );
+}
+
 export default function App() {
   const [showWeekNumbers, setShowWeekNumbers] = useState(true);
   const [fluidTodayPlacement, setFluidTodayPlacement] = useState(false);
+  const [multiView, setMultiView] = useState(false);
   const [responsiveWidth, setResponsiveWidth] = useState(298);
   const [responsiveHeight, setResponsiveHeight] = useState(MIN_RESPONSIVE_HEIGHT);
   const [todayInHeader, setTodayInHeader] = useState(false);
   const responsiveFrameRef = useRef<HTMLDivElement>(null);
   const previousTodayInHeader = useRef<boolean | null>(null);
+
+  function minimumWidth(weekNumbers = showWeekNumbers) {
+    if (multiView) return weekNumbers ? MULTI_VIEW_WIDTH_WITH_WEEKS : MULTI_VIEW_WIDTH_WITHOUT_WEEKS;
+    return weekNumbers ? 298 : 274;
+  }
 
   useEffect(() => {
     const previous = previousTodayInHeader.current;
@@ -362,7 +493,15 @@ export default function App() {
         ? Math.max(MIN_RESPONSIVE_HEIGHT, height - footerHeight)
         : Math.min(720, Math.max(MIN_FOOTER_HEIGHT, height + footerHeight)),
     );
-  }, [todayInHeader]);
+  }, [multiView, todayInHeader]);
+
+  useEffect(() => {
+    if (multiView) {
+      previousTodayInHeader.current = false;
+      setTodayInHeader(false);
+      setResponsiveWidth((width) => Math.max(minimumWidth(), width));
+    }
+  }, [multiView, showWeekNumbers]);
 
   function startResize(direction: -1 | 1) {
     return (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -372,7 +511,7 @@ export default function App() {
 
       const resize = (moveEvent: PointerEvent) => {
         const nextWidth = startWidth + (moveEvent.clientX - startX) * direction;
-        setResponsiveWidth(Math.min(720, Math.max(showWeekNumbers ? 298 : 274, nextWidth)));
+        setResponsiveWidth(Math.min(1000, Math.max(minimumWidth(), nextWidth)));
       };
       const stop = () => {
         window.removeEventListener("pointermove", resize);
@@ -417,7 +556,7 @@ export default function App() {
       const resize = (moveEvent: PointerEvent) => {
         const nextWidth = startWidth + (moveEvent.clientX - startX) * horizontalDirection;
         const nextHeight = startHeight + (moveEvent.clientY - startY) * verticalDirection;
-        setResponsiveWidth(Math.min(720, Math.max(showWeekNumbers ? 298 : 274, nextWidth)));
+        setResponsiveWidth(Math.min(1000, Math.max(minimumWidth(), nextWidth)));
         setResponsiveHeight(Math.min(720, Math.max(minimumHeight, nextHeight)));
       };
       const stop = () => {
@@ -438,6 +577,8 @@ export default function App() {
           Drag an edge or corner handle to explore horizontal, vertical, and combined resizing.
           <br />
           Select the month or year in the header to switch to its selection view.
+          <br />
+          Enable Multi-view calendar to compare two consecutive months.
         </p>
         <div className="demo-controls">
           <span>Show week numbers</span>
@@ -448,10 +589,10 @@ export default function App() {
               onChange={(event) => {
                 const currentFrameWidth =
                   responsiveFrameRef.current?.getBoundingClientRect().width ?? responsiveWidth;
-                const widthDelta = event.target.checked ? 24 : -24;
-                const minimumWidth = event.target.checked ? 298 : 274;
+                const widthDelta = (event.target.checked ? 1 : -1) * (multiView ? 48 : 24);
+                const nextMinimumWidth = minimumWidth(event.target.checked);
 
-                setResponsiveWidth(Math.min(720, Math.max(minimumWidth, currentFrameWidth + widthDelta)));
+                setResponsiveWidth(Math.min(1000, Math.max(nextMinimumWidth, currentFrameWidth + widthDelta)));
                 setShowWeekNumbers(event.target.checked);
               }}
             />
@@ -473,6 +614,30 @@ export default function App() {
               <span className="switch-thumb" />
             </span>
             <span className="sr-only">Toggle fluid Today button placement</span>
+          </label>
+        </div>
+        <div className="demo-controls">
+          <span>Multi-view calendar</span>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={multiView}
+              onChange={(event) => {
+                setMultiView(event.target.checked);
+                if (event.target.checked) {
+                  setResponsiveWidth(
+                    showWeekNumbers ? MULTI_VIEW_WIDTH_WITH_WEEKS : MULTI_VIEW_WIDTH_WITHOUT_WEEKS,
+                  );
+                  setResponsiveHeight(MULTI_VIEW_HEIGHT);
+                } else {
+                  setResponsiveHeight(MIN_FOOTER_HEIGHT);
+                }
+              }}
+            />
+            <span className="switch-track" aria-hidden="true">
+              <span className="switch-thumb" />
+            </span>
+            <span className="sr-only">Toggle two-month calendar view</span>
           </label>
         </div>
       </div>
@@ -514,13 +679,21 @@ export default function App() {
           >
             <span />
           </button>
-          <Calendar
-            drilldown
-            responsive
-            showWeekNumbers={showWeekNumbers}
-            fluidTodayPlacement={fluidTodayPlacement}
-            onTodayPlacementChange={setTodayInHeader}
-          />
+          {multiView ? (
+            <MultiViewCalendar
+              showWeekNumbers={showWeekNumbers}
+              fluidTodayPlacement={fluidTodayPlacement}
+              onTodayPlacementChange={setTodayInHeader}
+            />
+          ) : (
+            <Calendar
+              drilldown
+              responsive
+              showWeekNumbers={showWeekNumbers}
+              fluidTodayPlacement={fluidTodayPlacement}
+              onTodayPlacementChange={setTodayInHeader}
+            />
+          )}
           <button
             className="resize-handle resize-handle--bottom-left"
             type="button"
