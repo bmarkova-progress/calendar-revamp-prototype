@@ -341,13 +341,13 @@ function Calendar({
 
 export default function App() {
   const [showWeekNumbers, setShowWeekNumbers] = useState(true);
-  const [responsiveWidth, setResponsiveWidth] = useState(420);
-  const [responsiveHeight, setResponsiveHeight] = useState<number | null>(null);
+  const [responsiveWidth, setResponsiveWidth] = useState(298);
+  const [responsiveHeight, setResponsiveHeight] = useState(MIN_RESPONSIVE_HEIGHT);
   const [todayInHeader, setTodayInHeader] = useState(false);
   const responsiveFrameRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!todayInHeader && responsiveHeight !== null && responsiveHeight < MIN_FOOTER_HEIGHT) {
+    if (!todayInHeader && responsiveHeight < MIN_FOOTER_HEIGHT) {
       setResponsiveHeight(MIN_FOOTER_HEIGHT);
     }
   }, [responsiveHeight, todayInHeader]);
@@ -454,7 +454,7 @@ export default function App() {
         <div
           ref={responsiveFrameRef}
           className="responsive-frame"
-          style={{ width: responsiveWidth, height: responsiveHeight ?? undefined }}
+          style={{ width: responsiveWidth, height: responsiveHeight }}
         >
           <button
             className="resize-handle resize-handle--top-left"
