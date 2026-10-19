@@ -613,7 +613,7 @@ button.day:hover .day-inner {
 
 footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   height: 56px;
   padding: 10px;
 }
