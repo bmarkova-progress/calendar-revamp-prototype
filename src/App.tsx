@@ -163,6 +163,7 @@ function Calendar({
   const bodyMode = currentBodyMode ?? uncontrolledBodyMode;
   const todayInHeader = fluidTodayPlacement && showTodayInHeader && !centered;
   const drilldownToMonths = headerPattern === "month-year-drilldown";
+  const showHeaderNavigation = showNavigation && bodyMode === "days";
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -281,7 +282,7 @@ function Calendar({
         aria-label={centered ? "Centered calendar" : "Calendar"}
       >
         <header className="calendar-header">
-          {centered && showNavigation && <nav className="arrows" aria-label="Previous month">{previousButton}</nav>}
+          {centered && showHeaderNavigation && <nav className="arrows" aria-label="Previous month">{previousButton}</nav>}
           {headerPattern !== "separate" ? (
             <button
               className="year-picker-title"
@@ -326,9 +327,9 @@ function Calendar({
             </div>
           )}
           <nav className="arrows" aria-label={centered ? "Next month" : "Month navigation"}>
-            {!centered && showNavigation && previousButton}
+            {!centered && showHeaderNavigation && previousButton}
             {todayInHeader && todayButton}
-            {showNavigation && nextButton}
+            {showHeaderNavigation && nextButton}
           </nav>
         </header>
 
