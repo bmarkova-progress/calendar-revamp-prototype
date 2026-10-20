@@ -22,6 +22,7 @@ const MULTI_VIEW_WIDTH_WITH_WEEKS = 596;
 const MULTI_VIEW_WIDTH_WITHOUT_WEEKS = 548;
 const MULTI_VIEW_HEIGHT = 378;
 type CalendarBodyMode = "days" | "months" | "years";
+type HeaderPattern = "separate" | "month-year-drilldown" | "year-only";
 
 function isoWeek(date: Date) {
   const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -118,6 +119,7 @@ function Calendar({
   showWeekNumbers = true,
   responsive = false,
   drilldown = false,
+  headerPattern = "separate",
   fluidTodayPlacement = false,
   currentView,
   currentSelected,
@@ -135,6 +137,7 @@ function Calendar({
   showWeekNumbers?: boolean;
   responsive?: boolean;
   drilldown?: boolean;
+  headerPattern?: HeaderPattern;
   fluidTodayPlacement?: boolean;
   currentView?: Date;
   currentSelected?: Date;
@@ -159,6 +162,7 @@ function Calendar({
   const selected = currentSelected ?? uncontrolledSelected;
   const bodyMode = currentBodyMode ?? uncontrolledBodyMode;
   const todayInHeader = fluidTodayPlacement && showTodayInHeader && !centered;
+  const drilldownToMonths = headerPattern === "month-year-drilldown";
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -278,34 +282,49 @@ function Calendar({
       >
         <header className="calendar-header">
           {centered && showNavigation && <nav className="arrows" aria-label="Previous month">{previousButton}</nav>}
-          <div className="date-nav">
+          {headerPattern !== "separate" ? (
             <button
-              className="label-button"
+              className="year-picker-title"
               type="button"
               aria-haspopup="listbox"
-              aria-expanded={drilldown ? bodyMode === "months" : openMenu === "month"}
-              onClick={() =>
-                drilldown
-                  ? setCalendarBodyMode(bodyMode === "months" ? "days" : "months")
-                  : setOpenMenu(openMenu === "month" ? null : "month")
-              }
+              aria-expanded={bodyMode !== "days"}
+              onClick={() => setCalendarBodyMode(bodyMode === "days" ? "years" : "days")}
             >
-              {months[month]}
+              {`${months[month]} ${year}`}
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="m4 6 4 4 4-4" />
+              </svg>
             </button>
-            <button
-              className="label-button"
-              type="button"
-              aria-haspopup="listbox"
-              aria-expanded={drilldown ? bodyMode === "years" : openMenu === "year"}
-              onClick={() =>
-                drilldown
-                  ? setCalendarBodyMode(bodyMode === "years" ? "days" : "years")
-                  : setOpenMenu(openMenu === "year" ? null : "year")
-              }
-            >
-              {year}
-            </button>
-          </div>
+          ) : (
+            <div className="date-nav">
+              <button
+                className="label-button"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={drilldown ? bodyMode === "months" : openMenu === "month"}
+                onClick={() =>
+                  drilldown
+                    ? setCalendarBodyMode(bodyMode === "months" ? "days" : "months")
+                    : setOpenMenu(openMenu === "month" ? null : "month")
+                }
+              >
+                {months[month]}
+              </button>
+              <button
+                className="label-button"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={drilldown ? bodyMode === "years" : openMenu === "year"}
+                onClick={() =>
+                  drilldown
+                    ? setCalendarBodyMode(bodyMode === "years" ? "days" : "years")
+                    : setOpenMenu(openMenu === "year" ? null : "year")
+                }
+              >
+                {year}
+              </button>
+            </div>
+          )}
           <nav className="arrows" aria-label={centered ? "Next month" : "Month navigation"}>
             {!centered && showNavigation && previousButton}
             {todayInHeader && todayButton}
@@ -354,7 +373,7 @@ function Calendar({
                   key={item}
                   onClick={() => {
                     setCalendarView(new Date(item, month, 1));
-                    setCalendarBodyMode("days");
+                    setCalendarBodyMode(drilldownToMonths ? "months" : "days");
                   }}
                 >
                   <span>{item}</span>
@@ -412,10 +431,12 @@ function Calendar({
 function MultiViewCalendar({
   showWeekNumbers,
   fluidTodayPlacement,
+  headerPattern,
   onTodayPlacementChange,
 }: {
   showWeekNumbers: boolean;
   fluidTodayPlacement: boolean;
+  headerPattern: HeaderPattern;
   onTodayPlacementChange: (todayInHeader: boolean) => void;
 }) {
   const [view, setView] = useState(() => new Date(2021, 8, 1));
@@ -434,6 +455,7 @@ function MultiViewCalendar({
       <Calendar
         responsive
         drilldown
+        headerPattern={headerPattern}
         showWeekNumbers={showWeekNumbers}
         currentView={view}
         currentSelected={selected}
@@ -448,6 +470,7 @@ function MultiViewCalendar({
       <Calendar
         responsive
         drilldown
+        headerPattern={headerPattern}
         showWeekNumbers={showWeekNumbers}
         currentView={nextView}
         currentSelected={selected}
@@ -467,6 +490,7 @@ function MultiViewCalendar({
 }
 
 export default function App() {
+  const [activeDemo, setActiveDemo] = useState<HeaderPattern>("separate");
   const [showWeekNumbers, setShowWeekNumbers] = useState(true);
   const [fluidTodayPlacement, setFluidTodayPlacement] = useState(false);
   const [multiView, setMultiView] = useState(false);
@@ -573,10 +597,42 @@ export default function App() {
     <main className="calendar-page">
       <div className="demo-intro">
         <h1 className="demo-title">Calendar Revamp Demo</h1>
+        <div className="demo-tabs" role="tablist" aria-label="Calendar selection patterns">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeDemo === "separate"}
+            className={activeDemo === "separate" ? "active" : undefined}
+            onClick={() => setActiveDemo("separate")}
+          >
+            Separate month &amp; year pickers
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeDemo === "month-year-drilldown"}
+            className={activeDemo === "month-year-drilldown" ? "active" : undefined}
+            onClick={() => setActiveDemo("month-year-drilldown")}
+          >
+            Month &amp; year drilldown
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeDemo === "year-only"}
+            className={activeDemo === "year-only" ? "active" : undefined}
+            onClick={() => setActiveDemo("year-only")}
+          >
+            Year-only picker
+          </button>
+        </div>
         <p className="demo-instructions">
           Drag an edge or corner handle to explore horizontal, vertical, and combined resizing.
           <br />
-          Select the month or year in the header to switch to its selection view.
+          {activeDemo === "separate" && "Select the month or year in the header to switch to its selection view."}
+          {activeDemo === "month-year-drilldown" &&
+            "Select the month and year header, then choose a year followed by a month."}
+          {activeDemo === "year-only" && "Select the month and year header to switch to the year selection view."}
           <br />
           Enable Multi-view calendar to compare two consecutive months.
         </p>
@@ -681,13 +737,17 @@ export default function App() {
           </button>
           {multiView ? (
             <MultiViewCalendar
+              key={activeDemo}
               showWeekNumbers={showWeekNumbers}
               fluidTodayPlacement={fluidTodayPlacement}
+              headerPattern={activeDemo}
               onTodayPlacementChange={setTodayInHeader}
             />
           ) : (
             <Calendar
+              key={activeDemo}
               drilldown
+              headerPattern={activeDemo}
               responsive
               showWeekNumbers={showWeekNumbers}
               fluidTodayPlacement={fluidTodayPlacement}

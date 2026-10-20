@@ -60,6 +60,37 @@ body {
   line-height: 28px;
 }
 
+.demo-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+
+.demo-tabs button {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.demo-tabs button.active {
+  background: white;
+  color: #0f0051;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 12%);
+}
+
+.demo-tabs button:focus-visible {
+  outline: 2px solid #0f0051;
+  outline-offset: 2px;
+}
+
 .responsive-demo {
   display: flex;
   width: 100%;
@@ -357,13 +388,43 @@ button {
   padding-inline: 6px;
 }
 
+.year-picker-title {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #232a36;
+  cursor: pointer;
+  line-height: 24px;
+}
+
+.year-picker-title svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 150ms ease;
+}
+
+.year-picker-title[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
 .label-button:hover,
+.year-picker-title:hover,
 .today-button:hover,
 .arrows > button:not(.today-button):hover {
   background: #f5f5ff;
 }
 
 .label-button:focus-visible,
+.year-picker-title:focus-visible,
 .today-button:focus-visible,
 .arrows > button:not(.today-button):focus-visible,
 .menu button:focus-visible {
